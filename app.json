@@ -4,24 +4,28 @@
     "slug": "malonbiz",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/favicon.png", 
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "foregroundImage": "./assets/favicon.png",  
+        "backgroundColor": "#000000"
+      },
+      "package": "com.viratraj_9973.malonbiz",
+      "versionCode": 1
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png"  
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8039bb9b-6371-4ad2-9ed8-12fd6caf9ca5"
+      }
+    },
+    "owner": "viratraj_9973"
   }
 }
