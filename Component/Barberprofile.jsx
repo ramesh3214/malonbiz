@@ -64,7 +64,7 @@ const BarberProfile = ({ route, navigation }) => {
     checkUserAuthentication();
 
     const backAction = () => {
-      navigation.navigate('Dashboard');
+      navigation.navigate('Profile');
       return true;
     };
 
@@ -120,7 +120,7 @@ const BarberProfile = ({ route, navigation }) => {
   };
 
   const handleContact = () => {
-    const randomNumber = '7258866801'; // Replace with any random number
+    const randomNumber = '+1234567890'; // Replace with any random number
     Linking.openURL(`tel:${randomNumber}`);
   };
 
@@ -148,24 +148,21 @@ const BarberProfile = ({ route, navigation }) => {
       </View>
       {barberData ? (
         <View style={styles.boxContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} style={styles.box}>
-            <MaterialIcons name="book" size={24} color="#fff" />
+          <TouchableOpacity onPress={() => navigation.navigate('Online')} style={styles.box}>
+            <MaterialIcons name="book" size={24} color="#444" />
             <Text style={styles.boxText}>Dashboard</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.box} onPress={handleContact}>
-            <Ionicons name="call" size={24} color="#fff" />
+            <Ionicons name="call" size={24} color="#444" />
             <Text style={styles.boxText}>Contact</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.box} onPress={handleTermsAndConditions}>
-            <FontAwesome5 name="file-contract" size={24} color="#fff" />
+            <FontAwesome5 name="file-contract" size={24} color="#444" />
             <Text style={styles.boxText}>Terms & Conditions</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.box} onPress={() => navigation.navigate('History')} >
-            <FontAwesome5 name="file-contract" size={24} color="#fff" />
-            <Text style={styles.boxText}>History</Text>
-          </TouchableOpacity>
+        
           <TouchableOpacity style={styles.logoutBox} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={24} color="#000" />
+            <Ionicons name="log-out-outline" size={24} color="#fff" />
             <Text style={styles.logoutBoxText}>Logout</Text>
           </TouchableOpacity>
         </View>
@@ -174,7 +171,7 @@ const BarberProfile = ({ route, navigation }) => {
       )}
       {!barberData?.profileUpdated && !settingsDisabled && (
         <TouchableOpacity style={styles.settingsButton} onPress={() => setModalVisible(true)}>
-          <Ionicons name="settings" size={24} color="#fff" />
+          <Ionicons name="settings" size={24} color="#444" />
           <Text style={styles.settingsText}>Settings</Text>
         </TouchableOpacity>
       )}
@@ -234,40 +231,41 @@ const BarberProfile = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000', // Black background for a sleek look
+    backgroundColor: '#fafafa', // Light background for a cleaner look
     padding: 20,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 50,
+    marginBottom: 25,
+    marginTop: 40,
   },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#222', // Slightly lighter black for avatar
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#f0f0f0', 
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#444', // Subtle border for contrast
+    borderColor: '#d1d1d1',
   },
   avatarText: {
-    fontSize: 50,
-    fontWeight: 'bold',
-    color: '#e0e0e0', // Light gray for contrast
+    fontSize: 48,
+    fontFamily: 'outfit-bold',
+    color: '#444', // Slightly darker gray for a modern contrast
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#e0e0e0', // Light gray for contrast
+    fontSize: 24,
+    fontFamily: 'outfit-semibold',
+    color: '#111', // Darker shade for better readability
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   email: {
-    fontSize: 18,
-    color: '#b0b0b0', // Lighter gray for email
+    fontSize: 16,
+    fontFamily: 'outfit-regular',
+    color: '#777', 
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -275,108 +273,117 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 25,
   },
   box: {
-    backgroundColor: '#1a1a1a', // Darker box background
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#ffffff', // White boxes for a clean appearance
+    borderRadius: 15,
+    padding: 20,
     width: '48%',
-    marginVertical: 5,
+    marginVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000', // Subtle shadow for elevation effect
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowColor: '#ddd', 
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5, // For Android shadow support
   },
   boxText: {
-    color: '#fff',
-    fontSize: 18,
-    marginTop: 5,
+    color: '#222',
+    fontSize: 16,
+    fontFamily: 'outfit-medium',
+    marginTop: 10,
   },
   logoutBox: {
-    backgroundColor: '#FFCE54', // Red for logout
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#00A3AD', // Soft highlight for logout
+    borderRadius: 15,
+    padding: 18,
     width: '48%',
-    marginVertical: 5,
+    marginVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowColor: '#ddd',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
   },
   logoutBoxText: {
-    color: '#000',
+    color: '#fff', // Use red for emphasis
     fontSize: 18,
-    marginTop: 5,
-    fontWeight:'bold',
+    fontFamily: 'outfit-semibold',
+    marginTop: 10,
   },
   loadingText: {
-    color: '#e0e0e0',
+    color: '#555',
     textAlign: 'center',
     marginTop: 20,
     fontSize: 18,
+    fontFamily: 'outfit-medium',
   },
   settingsButton: {
-    backgroundColor: '#1e90ff', // Blue for settings button
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#007bff', // Zomato-style blue for buttons
+    borderRadius: 10,
+    padding: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    marginTop: 30,
+    shadowColor: '#ddd',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
   },
   settingsText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
+    fontFamily: 'outfit-semibold',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.8)', // Slightly darker overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark overlay for contrast
   },
   modalContent: {
-    backgroundColor: '#222', // Darker modal background
-    borderRadius: 12,
-    width: '80%',
-    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    width: '85%',
+    padding: 25,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowColor: '#ddd',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
     shadowRadius: 10,
+    elevation: 8,
   },
   modalTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#e0e0e0',
-    marginBottom: 15,
+    fontFamily: 'outfit-bold',
+    color: '#111',
+    marginBottom: 20,
   },
   input: {
     width: '100%',
     borderBottomWidth: 1,
-    borderBottomColor: '#444',
-    padding: 10,
-    marginVertical: 10,
+    borderBottomColor: '#ccc', 
+    padding: 12,
+    marginVertical: 15,
     fontSize: 16,
-    color: '#e0e0e0', // Light text color
+    fontFamily: 'outfit-regular',
+    color: '#444',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+    marginTop: 20,
   },
   saveButton: {
-    backgroundColor: '#28a745', // Green for save button
-    borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#28a745',
+    borderRadius: 10,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
     width: '48%',
@@ -384,11 +391,12 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: 'outfit-semibold',
   },
   cancelButton: {
-    backgroundColor: '#dc3545', // Red for cancel button
-    borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#dc3545',
+    borderRadius: 10,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
     width: '48%',
@@ -396,6 +404,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: 'outfit-semibold',
   },
 });
 

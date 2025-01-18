@@ -1,102 +1,188 @@
-// Login.js
-import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { useAuth } from './firebaseauth'; // Adjust the path as needed
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  ImageBackground,
+} from "react-native";
+import { useAuth } from "./firebaseauth"; // Adjust the path as needed
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 
 const Login = ({ navigation }) => {
   const { login } = useAuth(); // Use the correct hook here
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false); // State to manage loading indicator
 
   useEffect(() => {
     const checkCachedUser = async () => {
-      const cachedUser = await AsyncStorage.getItem('user');
+      const cachedUser = await AsyncStorage.getItem("user");
       if (cachedUser) {
-        navigation.navigate('Profile'); // Navigate if user is cached
+        navigation.navigate("Profile"); // Navigate if user is cached
       }
     };
 
     checkCachedUser();
   }, [navigation]);
 
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleLogin = async () => {
+    if (!validateEmail(email)) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setLoading(true); // Show loading indicator
+    setErrorMessage(""); // Reset error message
+
     try {
       await login(email, password);
-      navigation.navigate('Profile'); // Navigate to the profile screen after successful login
+      navigation.navigate("Profile"); // Navigate to the profile screen after successful login
     } catch (error) {
       setErrorMessage("Invalid username or password");
+    } finally {
+      setLoading(false); // Hide loading indicator
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        placeholderTextColor="#888"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        placeholderTextColor="#888"
-      />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-    </View>
+   
+      <View style={styles.cardContainer}>
+        <Text style={styles.title}>Welcome Back!</Text>
+        <Text style={styles.subtitle}>
+          Your Gateway to Exceptional Grooming Services
+        </Text>
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Email Address*</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Your Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholderTextColor="#999"
+          />
+          <Text style={styles.label}>Password*</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Your Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor="#999"
+          />
+        </View>
+        <TouchableOpacity
+          style={[styles.button, loading ? styles.buttonDisabled : null]}
+          onPress={handleLogin}
+          disabled={loading || !email || !password}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+  
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  
+  cardContainer: {
+    backgroundColor:"rgba(255, 255, 255, 0.9)", // Semi-transparent white background
+    borderRadius: 15,
     flex: 1,
-    justifyContent: 'center',
+    resizeMode: "cover",
+    justifyContent: "center",
     padding: 20,
-    backgroundColor: '#000',
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#e0e0e0',
+    fontSize: 28,
+    fontFamily: "outfit-bold",
+    color: "#00A3AD",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontFamily: "outfit-regular",
+    color: "#333",
+    textAlign: "center",
     marginBottom: 20,
-    textAlign: 'center',
   },
   errorText: {
-    color: 'red',
+    color: "#d9534f",
     marginBottom: 15,
-    textAlign: 'center',
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "outfit-regular",
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    color: "#444",
+    marginBottom: 5,
+    fontSize: 14,
+    fontFamily: "outfit-semibold",
   },
   input: {
-    height: 45,
-    borderColor: '#333',
+    height: 50,
+    borderColor: "#ddd",
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 15,
     borderRadius: 8,
-    backgroundColor: '#1e1e1e',
-    color: '#e0e0e0',
+    backgroundColor: "#f9f9f9",
+    color: "#333",
+    fontSize: 16,
+    fontFamily: "outfit-regular",
   },
   button: {
-    backgroundColor: '#FFCE54',
-    padding: 15,
+    backgroundColor: "#00A3AD",
+    paddingVertical: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  buttonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
   buttonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: "#fff",
+    fontSize: 18,
+    fontFamily: "outfit-semibold",
   },
 });
 

@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 20,
-    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingHorizontal: 15,
     paddingBottom: 10,
     backgroundColor: '#000',
   },
@@ -108,10 +108,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFF',
     textAlign: 'center',
+    
     flex: 1,
   },
   scrollContainer: {

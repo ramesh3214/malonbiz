@@ -26,6 +26,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
+import { Linking ,StatusBar} from "react-native";
 
 const OnlineBooking = () => {
   const [onlineServiceList, setOnlineServiceList] = useState([]);
@@ -148,16 +149,6 @@ const OnlineBooking = () => {
     navigation.navigate("Profile");
   };
 
-  const handleOnline = () => {
-    navigation.navigate("Dashboard");
-  };
-
-  const generateDocId = async () => {
-    const onlineBookingRef = collection(firestore, "onlinebooking");
-    const snapshot = await getDocs(onlineBookingRef);
-    return snapshot.size + 1; // Incremental ID based on the size of the collection
-  };
-
   const handleToggleOpen = async () => {
     try {
       const user = auth.currentUser;
@@ -196,27 +187,50 @@ const OnlineBooking = () => {
 
       if (serviceDoc.exists()) {
         const serviceData = serviceDoc.data();
-        const docId = await generateDocId();
 
-        // Move service to served list
-        const servedService = { ...serviceData, status: "served" };
+        // Get the current authenticated user
+        const user = auth.currentUser;
+        if (user) {
+          const barberRef = doc(firestore, "barbers", user.uid);
+          const barberDoc = await getDoc(barberRef);
 
-        await updateDoc(serviceRef, { status: "served" });
-        await addDoc(collection(firestore, "onlinebooking"), {
-          ...servedService,
-          id: docId,
-        });
+          if (barberDoc.exists()) {
+            const barberData = barberDoc.data();
+            const barberId = barberData?.barberId; // Assuming barberId is the salonId
 
-        setOnlineServiceList((prevList) =>
-          prevList.filter((service) => service.id !== serviceId)
-        );
-        setTotalEarnings(
-          (prevEarnings) => prevEarnings + servedService.totalPrice
-        );
-        setServedCount((prevCount) => prevCount + 1);
-        setNewNotifications((prevNotifications) =>
-          prevNotifications.filter((service) => service.id !== serviceId)
-        );
+            if (barberId) {
+              // Add the salonId (barberId) to the online booking document
+              const servedService = {
+                ...serviceData,
+                status: "served",
+                salonId: barberId,
+              };
+
+              await updateDoc(serviceRef, { status: "served" });
+
+              // Add new document to onlinebooking collection with salonId
+              await addDoc(
+                collection(firestore, "onlinebooking"),
+                servedService
+              );
+
+              setOnlineServiceList((prevList) =>
+                prevList.filter((service) => service.id !== serviceId)
+              );
+              setTotalEarnings((prevEarnings) => prevEarnings);
+              setServedCount((prevCount) => prevCount);
+              setNewNotifications((prevNotifications) =>
+                prevNotifications.filter((service) => service.id !== serviceId)
+              );
+            } else {
+              Alert.alert("Error", "Barber ID not found.");
+            }
+          } else {
+            Alert.alert("Error", "Barber document not found.");
+          }
+        } else {
+          Alert.alert("Error", "User not authenticated.");
+        }
       } else {
         Alert.alert("Error", "Service document not found.");
       }
@@ -246,12 +260,11 @@ const OnlineBooking = () => {
     setNewNotifications([]); // Clear notifications once they are viewed
   };
 
-  
-
   return (
     <View style={styles.container}>
+       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
       {loading ? (
-        <ActivityIndicator size="large" color="#FFCE54" />
+        <ActivityIndicator size="large" color="#00A3AD" />
       ) : (
         <>
           <View style={styles.header}>
@@ -259,7 +272,7 @@ const OnlineBooking = () => {
               style={styles.profileIcon}
               onPress={handleProfileClick}
             >
-              <Ionicons name="person-circle" size={40} color="#FFCE54" />
+              <Ionicons name="person-circle" size={40} color="#00A3AD" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.notificationIcon}
@@ -268,7 +281,7 @@ const OnlineBooking = () => {
               <Ionicons
                 name="notifications-outline"
                 size={30}
-                color="#FFCE54"
+                color="#00A3AD"
               />
               {newNotifications.length > 0 && (
                 <View style={styles.badge}>
@@ -279,17 +292,15 @@ const OnlineBooking = () => {
               )}
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.onlineButton} onPress={handleOnline}>
-            <Text style={styles.onlineButtonText}>Track Offline</Text>
+          <TouchableOpacity>
+            <Text style={styles.onlineButtonText}>Online</Text>
           </TouchableOpacity>
-
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={filter}
               style={styles.picker}
               onValueChange={(itemValue) => setFilter(itemValue)}
             >
-              
               <Picker.Item label="Today" value="today" />
               <Picker.Item label="Tomorrow" value="tomorrow" />
             </Picker>
@@ -301,15 +312,19 @@ const OnlineBooking = () => {
             <Switch
               value={isOpen}
               onValueChange={handleToggleOpen}
-              thumbColor={isOpen ? "#FFCE54" : "#888"}
-              trackColor={{ false: "#555", true: "#FFCE54" }}
+              thumbColor={isOpen ? "#00A3AD" : "#888"}
+              trackColor={{ false: "#555", true: "#00A3AD" }}
             />
           </View>
 
-          <ScrollView style={styles.scrollContainer}>
+          <ScrollView
+            showsVerticalScrollIndicator={false} // Hides vertical scrollbar
+            showsHorizontalScrollIndicator={false}
+            style={styles.scrollContainer}
+          >
             <View style={styles.rowContainer}>
               <View style={styles.box}>
-                <FontAwesome5 name="book" size={40} color="#000" />
+                <FontAwesome5 name="book" size={40} color="#fff" />
                 <Text style={styles.boxCount}>{onlineServiceList.length}</Text>
                 <Text style={styles.boxTitle}>Current bookings</Text>
               </View>
@@ -317,15 +332,14 @@ const OnlineBooking = () => {
                 <Ionicons
                   name="checkmark-done-outline"
                   size={30}
-                  color="#000"
+                  color="#fff"
                 />
                 <Text style={styles.boxCount}>{servedCount}</Text>
                 <Text style={styles.boxTitle}>Served bookings</Text>
               </View>
 
-              
               <View style={styles.box}>
-                <Ionicons name="wallet-outline" size={30} color="#000" />
+                <Ionicons name="wallet-outline" size={30} color="#fff" />
                 <Text style={styles.boxCount}>
                   Rs.{totalEarnings.toFixed(2)}
                 </Text>
@@ -333,57 +347,97 @@ const OnlineBooking = () => {
               </View>
             </View>
 
-            
             <View style={styles.listContainer}>
               <Text style={styles.listTitle}>New Bookings</Text>
               {onlineServiceList.length > 0 &&
-                onlineServiceList.map((service) => (
-                  <View key={service.id} style={styles.serviceCard}>
-                    <Text style={styles.serviceText}>
-                      Booking Number: {service.orderNumber || "N/A"}
-                    </Text>
-                    <Text style={styles.serviceText}>
-                      Total Price: Rs.{service.totalPrice.toFixed(2) || "N/A"}
-                    </Text>
-                    <Text style={styles.serviceText}>
-                      Appointment Date: {service.appointmentDate || "N/A"}
-                    </Text>
-                    <Text style={styles.serviceText2}>
-                      Payment Mode: "{service.paymentMethod || "N/A"}"
-                    </Text>
-                    <Text style={styles.serviceText}>
-                      Appointment Time: {service.appointmentTime || "N/A"}
-                    </Text>
-                    <Text style={styles.serviceText}>
-                      Order Items:{" "}
-                      {service.orderItems.map((item) => item.name).join(", ") ||
-                        "N/A"}
-                    </Text>
-                    {service.canceled && (
-                      <TouchableOpacity
-                        style={styles.removeButton}
-                        onPress={() => handleRemoveCanceled(service.id)}
-                      >
-                        <Text style={styles.removeButtonText}>Remove</Text>
-                      </TouchableOpacity>
-                    )}
+                onlineServiceList.map((service) => {
+                  const openDialPad = () => {
+                    Linking.openURL(`tel:${service.phoneNumber}`).catch(() =>
+                      Alert.alert(
+                        "Error",
+                        "Unable to make a call at the moment."
+                      )
+                    );
+                  };
+                  // Extract appointment time outside the JSX block
+                  const appointmentTime = service.appointmentTime
+                    ? Object.values(service.appointmentTime)[0]
+                    : "N/A";
 
-                    {service.canceled ? (
-                      <Text style={styles.canceledText}>Cancelled</Text>
-                    ) : (
-                      <TouchableOpacity
-                        style={styles.doneButton}
-                        onPress={() => handleDone(service.id)}
-                      >
-                        <Text style={styles.doneButtonText}>Mark as Done</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))}
+                  return (
+                    <View key={service.id} style={styles.serviceCard}>
+                      <Text style={styles.serviceText2}>
+                        {service.salons || "N/A"}
+                      </Text>
+                      <Text style={styles.serviceText}>
+                        Booking Number: {service.orderNumber || "N/A"}
+                      </Text>
+                      <Text style={styles.serviceText}>
+                        Total Price: Rs.
+                        {service.totalPrice
+                          ? service.totalPrice.toFixed(2)
+                          : "N/A"}
+                      </Text>
+                      <Text style={styles.serviceText}>
+                        Appointment Date: {service.appointmentDate || "N/A"}
+                      </Text>
+                      <Text style={styles.serviceText2}>
+                        Payment Mode: {service.paymentMethod || "N/A"}
+                      </Text>
+                      <Text style={styles.serviceText}>
+                        Appointment Time: {appointmentTime}
+                      </Text>
+
+                      <Text style={styles.serviceText}>
+                        Order Items:{" "}
+                        {service.orderItems.length > 0
+                          ? service.orderItems
+                              .map((item) => item.name)
+                              .join(", ")
+                          : "N/A"}
+                      </Text>
+
+                      <View style={styles.cardContainer}>
+                        <Text style={styles.phoneNumberText}>
+                          Phone Number: {service.phoneNumber}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.callButton}
+                          onPress={openDialPad} // Call openDialPad when pressed
+                        >
+                          <Ionicons name="call" size={20} color="#fff" />
+                          <Text style={styles.callButtonText}>Call</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {service.canceled && (
+                        <TouchableOpacity
+                          style={styles.removeButton}
+                          onPress={() => handleRemoveCanceled(service.id)}
+                        >
+                          <Text style={styles.removeButtonText}>Remove</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {service.canceled ? (
+                        <Text style={styles.canceledText}>Cancelled</Text>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles.doneButton}
+                          onPress={() => handleDone(service.id)}
+                        >
+                          <Text style={styles.doneButtonText}>
+                            Mark as Done
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
             </View>
           </ScrollView>
 
           {/* Modal for new booking notifications */}
+
           <Modal
             visible={modalVisible}
             animationType="slide"
@@ -394,19 +448,28 @@ const OnlineBooking = () => {
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>New Bookings</Text>
                 {newNotifications.length > 0 ? (
-                  newNotifications.map((notification) => (
-                    <View key={notification.id} style={styles.notificationItem}>
-                      <Text style={styles.notificationText}>
-                        Order Number: {notification.orderNumber}
-                      </Text>
-                      <Text style={styles.notificationText}>
-                        Appointment Date: {notification.appointmentDate}
-                      </Text>
-                      <Text style={styles.notificationText}>
-                        Appointment Time: {notification.appointmentTime}
-                      </Text>
-                    </View>
-                  ))
+                  newNotifications.map((notification) => {
+                    const appointmentTime = notification.appointmentTime
+                      ? Object.values(notification.appointmentTime)[0]
+                      : "N/A";
+
+                    return (
+                      <View
+                        key={notification.id}
+                        style={styles.notificationItem}
+                      >
+                        <Text style={styles.notificationText}>
+                          Order Number: {notification.orderNumber}
+                        </Text>
+                        <Text style={styles.notificationText}>
+                          Appointment Date: {notification.appointmentDate}
+                        </Text>
+                        <Text style={styles.notificationText}>
+                          Appointment Time: {appointmentTime}
+                        </Text>
+                      </View>
+                    );
+                  })
                 ) : (
                   <Text style={{ color: "#fff" }}>No new notifications</Text>
                 )}
@@ -428,14 +491,14 @@ const OnlineBooking = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000", // Dark background for contrast
+    backgroundColor: "#fff", // Lighter clean background for a fresh look
     padding: 20,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20, // Added margin for spacing
+    marginBottom: 20,
   },
   notificationIcon: {
     position: "relative",
@@ -444,49 +507,56 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -5,
     right: -5,
-    backgroundColor: "#FFCE54",
-    borderRadius: 10,
-    width: 24, // Increased size for better visibility
+    backgroundColor: "#ff4757", // More vibrant notification color
+    borderRadius: 12,
+    width: 24,
     height: 24,
     justifyContent: "center",
     alignItems: "center",
   },
   badgeText: {
-    color: "#000",
-    fontWeight: "bold",
-    fontSize: 12, // Adjusted for better fit
+    color: "#fff", // White text on badge for contrast
+    fontFamily: "outfit-bold",
+    fontSize: 12,
+    textTransform: "lowercase",
   },
   profileIcon: {
-    // Styles for the profile icon can be customized here
+    // Add styles if needed
   },
   removeButton: {
     backgroundColor: "#dc3545",
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 30, // Rounded edges for a modern look
+    borderRadius: 30,
     alignItems: "center",
     marginTop: 15,
-    shadowColor: "#000",
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   removeButtonText: {
     color: "#FFF",
-    fontWeight: "bold",
+    fontFamily: "outfit-bold",
+    textTransform: "lowercase",
   },
-
   downloadButton: {
-    backgroundColor: "#FFCE54",
-    padding: 10,
-    borderRadius: 4,
+    backgroundColor: "#00A3AD", // Keeping the consistent yellow theme
+    padding: 12,
+    borderRadius: 30,
     marginBottom: 8,
+    shadowColor: "#444",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   downloadButtonText: {
-    color: "#000",
-    fontWeight: "bold",
+    color: "#444",
+    fontFamily: "outfit-semibold",
+    textTransform: "lowercase",
   },
-
   toggleContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -494,31 +564,26 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     flex: 1,
-    color: "#FFF",
+    color: "#333",
     fontSize: 18,
-    fontWeight: "600", // Slightly bolder text
+    fontFamily: "outfit-medium",
+    textTransform: "lowercase",
   },
-  onlineButton: {
-    backgroundColor: "#FFCE54",
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 30,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-  },
+
   onlineButtonText: {
-    fontSize: 18,
-    fontWeight: "700", // Bolder text for emphasis
-    color: "#000",
+    fontSize: 16,
+    fontFamily: "outfit-semibold",
+    paddingVertical: 15,
+    color: "#00A3AD",
+    textTransform: "capitalize",
   },
   pickerContainer: {
     marginBottom: 15,
+    backgroundColor: "#f9f9f9",
   },
   picker: {
-    color: "#FFCE54",
+    color: "#00A3AD",
+    fontFamily: "outfit-semibold",
   },
   scrollContainer: {
     flex: 1,
@@ -526,122 +591,175 @@ const styles = StyleSheet.create({
   rowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 10, // Added vertical spacing
+    marginVertical: 10,
   },
   box: {
-    backgroundColor: "#FFCE54",
+    backgroundColor: "#00A3AD",
     borderRadius: 12,
     padding: 15,
     alignItems: "center",
     flex: 1,
-    marginHorizontal: 7, // Increased margin for spacing
-    shadowColor: "#000",
+    marginHorizontal: 7,
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
+    elevation: 2,
   },
   boxCount: {
-    fontSize: 22,
-    fontWeight: "700", // Bolder text for better emphasis
-    color: "#000",
+    fontSize: 16,
+    fontFamily: "outfit-regular",
+    color: "#fff",
+    textTransform: "lowercase",
   },
   boxTitle: {
-    fontSize: 16,
-    color: "#000",
+    fontSize: 15,
+    fontFamily: "outfit-regular",
+    color: "#fff",
+    textTransform: "lowercase",
   },
   listContainer: {
     marginTop: 25,
   },
   listTitle: {
-    fontSize: 20,
-    fontWeight: "700", // Bolder text for better visibility
-    color: "#FFCE54",
+    fontSize: 17,
+    fontFamily: "outfit-bold",
+    color: "#00A3AD",
     marginBottom: 15,
+    textTransform: "lowercase",
   },
   serviceCard: {
-    backgroundColor: "#1e1e1e", // Slightly lighter dark background
+    backgroundColor: "#f8f8f8",
     borderRadius: 12,
     padding: 20,
     marginVertical: 10,
-    shadowColor: "#000",
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   serviceText: {
-    color: "#FFCE54",
-    fontSize: 16, // Slightly larger text for readability
-    marginBottom: 10,
+    color: "#333",
+    fontSize: 16,
+    fontFamily: "outfit-regular",
   },
   serviceText2: {
-    color: "#FFCE54",
+    color: "#00A3AD",
     fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 10,
+    fontFamily: "outfit-bold",
+
+    textTransform: "lowercase",
+  },
+  cardContainer: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    padding: 20,
+    marginVertical: 10,
+    shadowColor: "#444",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+    flexDirection: 'row', // Aligns phone number and call button horizontally
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  phoneNumberText: {
+    fontSize: 16,
+    fontFamily: "outfit-regular",
+    color: "#333",
+    flex: 1, // Takes remaining space
+  },
+  callButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: "#00A3AD", // Button background color
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 30,
+    marginLeft: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  callButtonText: {
+    color: "#fff",
+    fontFamily: "outfit-bold",
+    fontSize: 16,
+    marginLeft: 8, // Space between icon and text
   },
   doneButton: {
-    backgroundColor: "#FFCE54",
+    backgroundColor: "#00A3AD",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 30,
-    marginTop: 15,
+    marginTop: 20,
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   doneButtonText: {
-    color: "#000",
-    fontWeight: "700", // Bolder text for emphasis
+    color: "#fff",
+    fontFamily: "outfit-bold",
+    textTransform: "lowercase",
   },
   canceledText: {
-    color: "#FF0000",
-    fontWeight: "700",
+    color: "#ff0000",
+    fontFamily: "outfit-semibold",
     textAlign: "center",
     marginTop: 15,
+    textTransform: "lowercase",
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Darker overlay for contrast
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent overlay
   },
   modalContent: {
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#ffffff",
     padding: 25,
     borderRadius: 12,
     width: "85%",
-    maxHeight: "85%",
-    shadowColor: "#000",
+    shadowColor: "#444",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   closeButton: {
     alignSelf: "flex-end",
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#FFCE54",
+    fontFamily: "outfit-bold",
+    color: "#00A3AD",
     marginBottom: 15,
+    textTransform: "lowercase",
   },
   notificationItem: {
-    marginBottom: 15, // Increased margin for spacing
+    marginBottom: 15,
   },
   notificationText: {
-    color: "#FFCE54",
+    color: "#333",
     fontSize: 16,
+    fontFamily: "outfit-regular",
   },
   noNotifications: {
-    color: "#FFCE54",
+    color: "#333",
     textAlign: "center",
-    fontSize: 16, // Increased font size for better readability
+    fontSize: 16,
+    fontFamily: "outfit-regular",
   },
   closeButtonText: {
-    color: "#FFCE54",
-    fontSize: 16, // Increased font size for readability
+    color: "#00A3AD",
+    fontSize: 16,
+    fontFamily: "outfit-medium",
+    textTransform: "lowercase",
   },
 });
 
